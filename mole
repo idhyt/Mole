@@ -13,22 +13,29 @@ if [[ "$EUID" -eq 0 ]]; then
 fi
 
 # Resolve the entrypoint's physical location. `mole` may be invoked through a
-# symlink (e.g. /usr/local/bin/mole -> /opt/mole/mole), and on macOS bash 3.2
-# BASH_SOURCE[0] is not guaranteed to hold the resolved path. Deriving
-# SCRIPT_DIR from the symlink's directory would break every
-# `source "$SCRIPT_DIR/lib/..."` import below.
-if command -v readlink >/dev/null 2>&1 && readlink -f / >/dev/null 2>&1; then
+# symlink whose directory does not hold lib/ (for example
+# /usr/local/bin/mole -> /opt/mole/mole). Official install.sh and Homebrew
+# pin SCRIPT_DIR with sed, so this walk is for unpinned custom layouts.
+# bash 3.2 BASH_SOURCE[0] names the invoked path, not the physical target.
+if command -v readlink > /dev/null 2>&1 && readlink -f / > /dev/null 2>&1; then
     # GNU readlink -f (Linux coreutils): one-shot full canonicalization.
     SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 else
     # Portable fallback for BSD readlink (macOS), which lacks -f. Walk each
     # symlink level, resolving relative targets against their parent dir.
     SOURCE="${BASH_SOURCE[0]}"
+    _mole_link_hops=0
     while [ -L "$SOURCE" ]; do
+        _mole_link_hops=$((_mole_link_hops + 1))
+        if [ "$_mole_link_hops" -gt 32 ]; then
+            printf '%s\n' 'mole: too many symlink hops resolving the entrypoint' >&2
+            exit 1
+        fi
         DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
         SOURCE="$(readlink "$SOURCE")"
-        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+        [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
     done
+    unset _mole_link_hops
     SCRIPT_PATH="$(cd -P "$(dirname "$SOURCE")" && pwd)/$(basename "$SOURCE")"
 fi
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
