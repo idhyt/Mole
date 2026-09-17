@@ -102,7 +102,7 @@ macOS creates every App Sandbox container with well-known names under `Data/`. T
 
 - `Data/Downloads`, `Data/Desktop`, `Data/Pictures`, `Data/Music`, and `Data/Movies` are usually symbolic links to the real user folders. Apple's sandbox docs say the container includes those links, and access to the resolved location needs the matching entitlement plus TCC.
 - `Data/Documents` is a real directory inside the container. It holds user documents the app wrote without going through `~/Documents`.
-- Measured on one current Mac: 706 of 706 `Data/Downloads` and `Data/Desktop` entries were `../../../../Downloads` or `../../../../Desktop`. Zero were real directories. All 706 `Data/Documents` entries were real directories.
+- On a current Mac, every container `Data/Downloads` and `Data/Desktop` resolved to the home-folder symlink; every `Data/Documents` was a real in-container directory.
 
 `#1578` asked Mole to clean `~/Library/Containers/com.kingsoft.wpsoffice.mac/Data/Downloads/*` while leaving that Downloads directory itself. WPS ships `com.apple.security.files.downloads.read-write`, so writes through that path land in the user's `~/Downloads`. Kingsoft's own download location is the user-set `文档/WPS/下载`, not this alias. Clearing the glob would empty the real Downloads folder.
 

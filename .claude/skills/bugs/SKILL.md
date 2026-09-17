@@ -1,6 +1,6 @@
 ---
 name: bugs
-description: "Mole incident catalog for destructive cleanup safety, bounded Shell/macOS probes, cancellation and concurrency, dry-run/real parity, async freshness, cache and accounting consistency, Bats validity, and actionable gates. Use for a Mole bug or safety-sensitive diff involving deletion evidence, sandbox path aliases, owner metadata, unknown process state, timeouts or signals, parallel workers, stale results, system parsing, persisted derivations, totals, progress, publication gates, or tests. Not for docs, release planning or notes, generic review, or other repositories."
+description: "Mole incident catalog for cleanup safety, bounded probes, cancellation, dry-run parity, and actionable gates. Use for a Mole safety-sensitive diff; not for docs, release notes, or generic review."
 ---
 
 # Mole bug patterns

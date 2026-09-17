@@ -126,6 +126,19 @@
         "Requires the abort text to name the app that hit the gate in a multi-app batch",
         "Leaves the #1558 exact-symlink fallback unchanged"
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "orphaned-runtime review 里两次 simctl 探测返回 124。有人要把这次 mo clean 整段停掉，也有人说这只是只读建议、后面的 clean section 应该继续。请判断 124 和信号该怎么传，并给出不会空转的测试。",
+      "expected_output": "A timeout-scope review that treats advisory simctl 124 as a skip of the runtime review, lets later clean sections continue, and keeps signal statuses sticky.",
+      "files": [],
+      "expectations": [
+        "Classifies the orphaned-runtime review as advisory and never-deleting",
+        "Treats simctl 124 as a skip of that review, not a command-level cancel",
+        "Keeps signal statuses sticky so later mutation does not start",
+        "Skips the review when the unavailable-simulator listing already timed out after warm-up",
+        "Makes a later clean section otherwise eligible and proves it still runs after 124"
+      ]
     }
   ]
 }
