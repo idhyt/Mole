@@ -101,6 +101,31 @@
         "Uses an expected-absence ref lease to close the branch-creation race",
         "Requires executable falsification fixtures in addition to source-text invariants"
       ]
+    },
+    {
+      "id": 9,
+      "prompt": "有人建议 mo clean 清理 ~/Library/Containers/com.kingsoft.wpsoffice.mac/Data/Downloads/*，只删里面的文件、保留 Downloads 目录本身，并说这不是用户的 ~/Downloads。请判断能不能进默认 clean，不要改代码。",
+      "expected_output": "A product-boundary review that physically resolves the sandbox Downloads path, treats it as the user's real Downloads when it is a symlink, declines default clean, and points at measured container caches rather than the well-known alias.",
+      "files": [],
+      "expectations": [
+        "Resolves Data/Downloads physically instead of trusting the lexical Containers path",
+        "Explains that Apple's container Downloads is usually a symlink to ~/Downloads",
+        "Rejects 'keep the directory, delete the contents' as protection when the directory is that symlink",
+        "Applies the Product Decision Filter and keeps the target out of default clean",
+        "Does not propose punching a container-interior hole for a well-known user-folder alias"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "mo uninstall 在 brew info --cask 读不懂某个 binary-only cask 时整批中止。有人建议改成按 brew list --cask 的名字认领后继续删，也有人只想把提示从 brew list --cask 改成 brew info --cask 并写出是哪个 app。请判断哪条能做，哪条不能做。",
+      "expected_output": "A refusal-diagnostics review that keeps the ownership gate, rejects name-only cask matching, and accepts a message that names the refused app plus a next command that fails on the broken cask.",
+      "files": [],
+      "expectations": [
+        "Keeps rc 2 as abort and does not treat brew list --cask or a basename match as ownership",
+        "Requires the next action to fail on the unreadable cask and succeed after that cask is repaired",
+        "Requires the abort text to name the app that hit the gate in a multi-app batch",
+        "Leaves the #1558 exact-symlink fallback unchanged"
+      ]
     }
   ]
 }

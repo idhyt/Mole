@@ -65,6 +65,16 @@ For each reachable refusal, write down:
 
 Two causes sharing one message is a defect when their remedies differ. "Reinstall" is not a remedy when reinstalling re-enters the same gate. When a new gate moves earlier in the flow, compare it with the old failure message and preserve at least the same actionability.
 
+The next action must fail on the broken state. `#1579` aborted a multi-app uninstall when `brew info --cask` could not parse a binary-only cask. The hint said `brew list --cask`, which never loads a cask definition and still lists the broken cask as healthy. `#1580` kept the refusal and changed only the text: name the app the gate could not classify, and send the user to `brew info --cask`. Accepting a name-only cask match would have removed the message by weakening ownership, which `#1558` already forbids.
+
+A multi-item batch that shares one refusal line must name which item hit the gate. An empty subject (`'' matches a Homebrew cask`) or a stage name alone (`Homebrew ownership check`) leaves the reporter guessing.
+
+Check three properties for every new refusal:
+
+1. The named cause is the branch that actually returned.
+2. The suggested command or action is red on the failing input and green after the user repairs that input.
+3. The cheaper-looking fix does not relax the evidence rule that created the gate.
+
 Swallowed stderr can hide the only differentiating evidence. Use a controlled differential probe during diagnosis, then map the structured result to a reason code instead of permanently exposing raw privileged stderr.
 
 ```bash

@@ -53,16 +53,27 @@ macOS command output is localized, drifts between releases, and can print errors
 - Reject PlistBuddy's missing-file prose as data.
 - Use stock macOS semantics when checking flags. BSD `grep -Z` means `--decompress`; a developer alias may hide that.
 - Prefer exit codes, plist keys, and machine-readable output over prose matching.
+- Join records on the machine identifier, never on a heading or display string. `simctl runtime list` titles each image with the image version (`iOS 26.4.1`) while `simctl list devices` groups under the runtime short name (`iOS 26.4`). A name join calls every point release an orphan and offers `simctl runtime delete` for a runtime its simulators still bind (`#1505`). `mdls -name kMDItemDisplayName` returns the on-disk file name, not Finder's localized name, so it always beat `CFBundleDisplayName` and shipped folder names like `VideoFusion-macOS` (`#1520`).
 
 Use `command grep` when flag behavior matters, because the interactive environment may alias it.
 
 ## 15. Cancellation is local unless orchestration makes it sticky
 
-Classify a timeout at its source before propagating it. Signal-derived cancellation and safety-guard timeouts that the caller treats as cancellation must remain sticky across the remaining command. Status `124` alone does not define the scope:
+Classify a timeout at its source before propagating it. Signal-derived cancellation and safety-guard timeouts that the caller treats as cancellation must remain sticky across the remaining command. Status `124` alone does not define the scope. Read the probe's product contract first:
 
-- In `bin/clean.sh`, a final delete guard returning `124` cancels later work, while an individual `safe_remove` timeout is a reported failed removal and later items may continue. Timed-out sizing contributes an unknown/partial total, not false reclaimed bytes.
+| Contract | Typical `124` | Typical `>=128` |
+|---|---|---|
+| Safety guard, owner unknown, or cancellation the caller already established | Sticky stop; later mutation and later sections must not start | Sticky stop |
+| Per-item sizing or removal of an otherwise eligible candidate | Skip or fail that item; later items may continue (`#1374`, `#1384`, `#1576`) | Sticky stop |
+| Review-only or advisory listing that never deletes | Skip that advice; later cleanup sections continue (`#1571`) | Sticky stop |
+| Cooperative section budget | Stop the rest of that section, report partial, continue later sections (`#1513`) | Sticky stop |
+
+- In `bin/clean.sh`, a final delete guard returning `124` cancels later work, while an individual `safe_remove` timeout is a reported failed removal and later items may continue. Timed-out sizing contributes an unknown/partial total, not false reclaimed bytes. Large-files Mail / Downloads / Updates rows follow the review-only skip: a size timeout omits that row, and a signal still cancels (`#1576`, `#1344`).
+- The orphaned-runtime review is advisory. A cold `simctl` that returns `124` skips the review and must not cancel later `mo clean` sections. Skip the review entirely when the unavailable-simulator listing already timed out after its warm-up retry (`#1571`, `04e658d2`).
 - Cloud & Office uses a cooperative section deadline: stop the remaining items in that section, preserve parent counters, report partial completion, and continue later sections. Do not restore its removed outer timeout worker or the file-backed deferred-family replay that existed only for that worker.
 - Purge discovery discards incomplete root scans and marks the run incomplete. An authored-content probe returning `2` keeps and visibly reports that candidate; deletion-phase activity or removal timeouts cancel the run. Unknown evidence never permits deletion.
+
+The inverse defect is as common as a missed sticky cancel. Treating a review-only `124` as command-level cancellation skips every later section. Treating a safety-guard `124` as a local skip deletes with unknown evidence.
 
 Once the caller establishes cancellation, carry that decision through every boundary:
 
