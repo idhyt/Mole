@@ -148,6 +148,20 @@ SCRIPT
 	[[ "$output" == *"mo clean"* ]] || return 1
 }
 
+@test "mole invoked through a Homebrew-style prefix symlink still sources lib" {
+	local prefix cellar
+	prefix="$(mktemp -d "${BATS_TEST_TMPDIR}/mole-brew-prefix.XXXXXX")"
+	cellar="$prefix/Cellar/mole/9.9.9/bin"
+	mkdir -p "$prefix/bin" "$cellar"
+	cp "$PROJECT_ROOT/mole" "$cellar/mole"
+	chmod +x "$cellar/mole"
+	cp -R "$PROJECT_ROOT/lib" "$prefix/bin/lib"
+	ln -s "$cellar/mole" "$prefix/bin/mole"
+	run env HOME="$HOME" "$prefix/bin/mole" --help
+	[ "$status" -eq 0 ] || { echo "$output"; return 1; }
+	[[ "$output" == *"mo clean"* ]] || return 1
+}
+
 @test "mole --version shows nightly channel metadata" {
 	expected_version="$(grep '^VERSION=' "$PROJECT_ROOT/mole" | head -1 | sed 's/VERSION=\"\(.*\)\"/\1/')"
 	mkdir -p "$HOME/.config/mole"
